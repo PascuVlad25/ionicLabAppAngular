@@ -1,5 +1,5 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { Message } from '../services/data.service';
+import { Message } from 'src/app/models';
 
 @Component({
   selector: 'app-message',
