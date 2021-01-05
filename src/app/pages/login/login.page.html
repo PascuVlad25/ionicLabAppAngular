@@ -1,0 +1,13 @@
+<ion-content scrollY="false">
+  <app-offline-bar></app-offline-bar>
+  <div class="main-container">
+    <div class="form-container">
+      <img class="logo" src="/assets/images/logo.png">
+      <div class="inputs-container">
+        <ion-input type="text" [(ngModel)]="username" placeholder="Username"></ion-input>
+        <ion-input type="password" [(ngModel)]="password" placeholder="Password"></ion-input>
+      </div>
+      <ion-button (click)="login()">Login</ion-button>
+    </div>
+  </div>
+</ion-content>

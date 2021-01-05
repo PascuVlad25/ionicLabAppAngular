@@ -1,0 +1,22 @@
+.image-container {
+  height: 200px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+h1 {
+  margin: 0;
+  font-weight: bold;
+  font-size: 22px;
+}
+
+p {
+  line-height: 22px;
+}
+
+#map {
+  height: 40vh;
+  margin-bottom: 5vh;
+}

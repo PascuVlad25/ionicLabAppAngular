@@ -1,0 +1,25 @@
+
+.image-container {
+  height: 200px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  img {
+    min-height: 200px;
+  }
+}
+
+.card-description {
+  height: 75px;
+}
+
+.card-title {
+  max-height: 68px;
+}
+
+ion-footer ion-title {
+  font-size: 11px;
+  font-weight: normal;
+}

@@ -1,0 +1,15 @@
+
+  <ion-card *ngIf="event" (click)="goToViewEvent()">
+    <div class="image-container">
+      <img [src]="sanitizeImage()" />
+    </div>
+    <ion-card-header>
+      <ion-card-title>
+        <div class="card-title" ellipsis [ellipsis-content]="event.title"></div>
+      </ion-card-title>
+    </ion-card-header>
+  
+    <ion-card-content>
+      <div class="card-description" ellipsis [ellipsis-content]="event.description"></div>
+    </ion-card-content>
+  </ion-card>

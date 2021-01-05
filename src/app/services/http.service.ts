@@ -1,7 +1,7 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import axios from 'axios';
-import { from, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { serverAddress } from './../../environments/server-address';
 
 @Injectable()
 export class HttpService {
@@ -10,20 +10,27 @@ export class HttpService {
           'Content-Type': 'application/json'
         }
     };
-    private baseUrl =  'http://localhost:3000';
+    private baseUrl = `http://${serverAddress}/api`;
+
+    constructor(private http: HttpClient){}
 
     public get<T>(url: string): Observable<T> {
         const getUrl = `${this.baseUrl}/${url}`;
-        return from(axios.get(getUrl, this.config)).pipe(map(response => response.data));
+        return this.http.get<T>(getUrl);
     }
 
     public post(url: string, body: any): Observable<any> {
         const postUrl = `${this.baseUrl}/${url}`;
-        return from(axios.post(postUrl , body, this.config)).pipe(map(response => response.data));
+        return this.http.post(postUrl, body, this.config);
     }
 
     public put<T>(url: string, body: T): Observable<T> {
         const putUrl = `${this.baseUrl}/${url}`;
-        return from(axios.put(putUrl, body, this.config)).pipe(map(response => response.data));
+        return this.http.put<T>(putUrl, body);
+    }
+
+    public delete(url: string) {
+        const deleteUrl = `${this.baseUrl}/${url}`;
+        return this.http.delete(deleteUrl);
     }
 }

@@ -1,0 +1,55 @@
+.image-container {
+    height: 200px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .add-image-button {
+        width: 90%;
+        height: 80%;
+        background-color: #eee;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 15px;
+
+        .add-image-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--ion-color-primary);
+
+            ion-icon {
+                font-size: 45px;
+                margin-bottom: 5px;
+            }
+        }
+    }
+}
+
+#map-edit {
+    height: 40vh;
+    margin-bottom: 10vh;
+  }
+
+.save-button-container {
+    position: fixed;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    bottom: 3vh;
+
+    .save-button {
+        width: 60%;
+        --border-radius: 20px;    
+        border-radius: 20px;
+        box-shadow: 0 5px 20px rgba(var(--ion-color-primary-rgb), 0.3);
+    }
+}
+
+ion-item {
+    --padding-start: 0;
+    margin-top: 25px;
+}

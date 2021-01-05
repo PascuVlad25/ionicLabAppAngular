@@ -1,7 +1,11 @@
+
 <ion-header [translucent]="true">
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
     <ion-title>
-      Inbox
+      Explore
     </ion-title>
   </ion-toolbar>
 </ion-header>
@@ -13,19 +17,31 @@
   
   <ion-header id="5" collapse="condense">
     <ion-toolbar>
-      <ion-title size="large">
-        Inbox
+      <ion-title class="page-title" size="large">
+        Explore
       </ion-title>
+    </ion-toolbar>
+    <ion-toolbar>
+      <ion-searchbar class="searchbar" (ionChange)="search($event)" slot="start"></ion-searchbar>
+      <ion-icon class="filter-button" (click)="switchFilter()" color="primary" [name]="isFilterOn ? 'filter-circle' : 'filter-circle-outline'"></ion-icon>
     </ion-toolbar>
   </ion-header>
 
+  <app-offline-bar></app-offline-bar>
+
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button (click)="showNewMessagePopup()">
+    <ion-fab-button (click)="createEvent()">
       <ion-icon name="add-outline"></ion-icon>
     </ion-fab-button>
   </ion-fab>
   
   <ion-list>
-    <app-message *ngFor="let message of (messages$ | async).reverse()" [message]="message"></app-message>
+    <app-event-card *ngFor="let event of filterEvents()" [event]="event"></app-event-card>
   </ion-list>
+
+  <ion-infinite-scroll (ionInfinite)="loadData($event)">
+    <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="Loading more data...">
+    </ion-infinite-scroll-content>
+  </ion-infinite-scroll>
+
 </ion-content>

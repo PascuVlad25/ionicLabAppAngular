@@ -1,0 +1,38 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Create Event</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="closePage()">Cancel</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="form-container ion-padding">
+    <div (click)="selectPhotoMethod()" class="image-container">
+      <img *ngIf="event.image" [src]="sanitizeImage()">
+      <div *ngIf="!event.image" class="add-image-button">
+        <div class="add-image-icon">
+          <ion-icon name="add-circle"></ion-icon>
+          <div>Add image</div>
+        </div>
+      </div>
+    </div>
+
+    <ion-item>
+      <ion-label position="stacked">Event Title</ion-label>
+      <ion-input [(ngModel)]="event.title"></ion-input>
+    </ion-item>
+  
+    <ion-item>
+      <ion-label position="stacked">Event Description</ion-label>
+      <ion-textarea autoGrow="true" [(ngModel)]="event.description"></ion-textarea>
+    </ion-item>
+  </div>
+
+  <div id="map-edit"></div>
+  
+  <div class="save-button-container">
+    <ion-button (click)="saveEvent()" class="save-button">{{ isEdit ? "Update Event" : "Create Event"}}</ion-button>
+  </div>
+</ion-content>

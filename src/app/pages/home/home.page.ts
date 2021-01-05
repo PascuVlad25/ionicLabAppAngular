@@ -1,62 +1,110 @@
-import { Component } from '@angular/core';
-import { AlertController } from '@ionic/angular';
-import { Observable } from 'rxjs';
-import { Message, MessageDto } from 'src/app/models';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { AlertController, AnimationController, ModalController } from '@ionic/angular';
+import { Subscription } from 'rxjs';
+import { Event } from 'src/app/models';
 import { DataService } from 'src/app/services';
+import { CreateEventPage } from '../create-event/create-event.page';
 
 @Component({
   selector: 'app-home',
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
 })
-export class HomePage {
-  public messages$: Observable<Message[]>;
+export class HomePage implements OnInit, OnDestroy {
+  public events: Event[];
+  public isFilterOn = false;
+  private searchedText = '';
+  private subscription: Subscription;
+  private pageSize = 10;
+  private currentPage = 1;
 
-  constructor(private dataService: DataService, public alertController: AlertController) {
-    this.getMessages();
+  constructor(private dataService: DataService,
+    public alertController: AlertController, private modalController: ModalController, private animationController: AnimationController) { }
+
+  public ngOnInit(): void {
+    this.dataService.fetchItems(this.pageSize, this.currentPage);
+    this.subscribeToEvents();
+    this.animatePage();
   }
 
-  public refresh(ev) {
+  public search(event: any): void {
+    this.searchedText = event.detail.value.toLowerCase();
+    this.currentPage = 1;
+    this.dataService.fetchItems(this.pageSize, this.currentPage, this.searchedText, this.isFilterOn);
+  }
+
+  public switchFilter(): void {
+    this.isFilterOn = !this.isFilterOn;
+    this.dataService.fetchItems(this.pageSize, this.currentPage, this.searchedText, this.isFilterOn);
+  }
+
+  public loadData(event: any): void {
+    if(this.currentPage >= this.dataService.noOfPages) {
+      event.target.complete();
+      return;
+    }
+    this.currentPage += 1;
+    this.dataService.fetchItems(this.pageSize, this.currentPage, this.searchedText, this.isFilterOn);
+    event.target.complete();
+  }
+
+  public refresh(event: any): void {
+    this.dataService.fetchItems(this.pageSize, this.currentPage, this.searchedText, this.isFilterOn);
     setTimeout(() => {
-      ev.detail.complete();
-    }, 3000);
+      event.target.complete();
+    }, 1000);
   }
 
-  public async showNewMessagePopup(): Promise<void> {
-    const alert = await this.alertController.create({
-      cssClass: 'my-custom-class',
-      header: 'New Message',
-      inputs: [
-        {
-          name: 'from',
-          type: 'text',
-          placeholder: 'From'
-        },
-        {
-          name: 'subject',
-          type: 'text',
-          placeholder: 'Subject'
-        },
-        {
-          name: 'content',
-          type: 'textarea',
-          placeholder: 'Your message'
-        },
-      ],
-      buttons: ['Cancel', {
-        text: 'Create',
-        handler: (data) => {
-          const newMessage = new MessageDto(data.from, data.subject, data.content);
-          this.dataService.createNewMessage(newMessage);
-        }}
-      ],
+  public async presentModal() {
+    const modal = await this.modalController.create({
+      component: CreateEventPage,
+      cssClass: 'my-custom-class'
     });
-
-    await alert.present();
+    return await modal.present();
   }
 
-  private getMessages(): void {
-    this.messages$ = this.dataService.getItems();
+  public createEvent(): void {
+    // this.router.navigate(['/create-event']);
+    this.presentModal();
+    
   }
 
+  public filterEvents(): Event[] {
+    return this.events.filter((event) => !(this.isFilterOn && event.read));
+  }
+
+  public ngOnDestroy(): void {
+    this.subscription.unsubscribe();
+  }
+
+  private subscribeToEvents(): void {
+    this.subscription = this.dataService.getItems().subscribe(events => {
+      this.events = events;
+    })
+  }
+
+  private async animatePage(): Promise<void> {
+    const title = this.animationController.create()
+      .addElement(document.querySelector('.page-title'))
+      .easing("ease-in-out")
+      .duration(2000)
+      .keyframes([
+        { offset: 0, marginLeft: '0px' },
+        { offset: 0.5, marginLeft: '15px' },
+        { offset: 1, marginLeft: '0px' }
+      ]);
+      
+      const filterButton = this.animationController.create()
+      .addElement(document.querySelector('.filter-button'))
+      .easing("ease-in-out")
+      .duration(2000)
+      .keyframes([
+        { offset: 0, transform: 'rotate(0deg) scale(1)' },
+        { offset: 0.5, transform: 'rotate(180deg) scale(1.3)' },
+        { offset: 1, transform: 'rotate(360deg) scale(1)'},
+      ]);
+
+    await title.play();
+    await filterButton.play();
+  }
 }

@@ -1,2 +1,2 @@
 export * from './home';
-export * from './view-message';
+export * from './event-details';

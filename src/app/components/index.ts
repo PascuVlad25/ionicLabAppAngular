@@ -1,1 +1,1 @@
-export * from './message';
+export * from './shared-components.module';

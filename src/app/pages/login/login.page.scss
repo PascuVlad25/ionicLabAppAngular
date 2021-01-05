@@ -1,0 +1,28 @@
+.main-container {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .form-container {
+        width: 80%;
+        height: 60vh;
+        display: flex;
+        flex-direction: column;
+
+        img {
+            margin-bottom: 10vh;
+        }
+
+        .inputs-container {
+            margin-bottom: 5vh;
+
+            ion-input {
+                --background: #eee;
+                --padding-start: 15px;
+                border-radius: 10px;
+                margin-bottom: 10px;
+            }
+        }
+    }    
+}

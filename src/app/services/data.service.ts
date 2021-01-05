@@ -1,97 +1,131 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { Message, MessageDto } from '../models';
+import { Event, EventDto, EventPaginationDto, WebsocketDataDTO, WebsocketDataType } from '../models';
+import { LocalStorageItems } from '../shared';
+import { ConnectivityService } from './connectivity.service';
+import { EntityConflictsService } from './entity-conflicts.service';
 import { HttpService } from './http.service';
+import { OfflineTaskService } from './offline-task.service';
+import { WebsocketService } from './websocket.service';
 
-const baseUrl = 'localhost:3000';
-export const newWebSocket = (onMessage: (data: any) => void) => {
-    const ws = new WebSocket(`ws://${baseUrl}`)
-    ws.onopen = () => {
-      console.log('web socket onopen');
-    };
-    ws.onclose = () => {
-        console.log('web socket onclose');
-    };
-    ws.onerror = error => {
-        console.log('web socket onerror', error);
-    };
-    ws.onmessage = messageEvent => {
-        console.log('web socket onmessage');
-      onMessage(JSON.parse(messageEvent.data));
-    };
-    return () => {
-      ws.close();
-    }
-  }
 
 @Injectable()
 export class DataService implements OnDestroy {
 
-  public messages: Message[] = [];
-  private messages$: BehaviorSubject<Message[]> = new BehaviorSubject([]);
-  private closeWebSocket: () => void;
+  public messages: Event[] = [];
+  public noOfPages = 1;
+  private events$: BehaviorSubject<Event[]> = new BehaviorSubject([]);
   private entityUrl = 'item';
+  private subscription: Subscription;
+  private isOnline = true;
 
-  constructor(private httpService: HttpService) {
-    console.log('initialized');
-    this.fetchItems();
-    this.createWebsocket();
+  constructor(
+      private httpService: HttpService, 
+      private connectivityService: ConnectivityService, 
+      private offlineTaskService: OfflineTaskService,
+      private entityConflictsService: EntityConflictsService,
+      private websocketService: WebsocketService) {
+    console.log('data service initialized');
+    this.websocketService.events$ = this.events$;
+    this.subscribeToConnectivity();
   }
 
-  public async fetchItems(): Promise<void> {
-    this.httpService.get<Message[]>(this.entityUrl).subscribe((items) => {
-      console.log(items);
-      this.messages$.next(items);
+  public fetchItems(pageSize: number, currentPage: number, search?: string, isFilterOn?: boolean): void {
+    if(!this.isOnline) {
+        this.fetchItemsOffline(pageSize, currentPage);
+        return;
+    }    
+    const currentUser = JSON.parse(localStorage.getItem(LocalStorageItems.CurrentUser));
+    const getUrl = `${this.entityUrl}?pageSize=${pageSize}&page=${currentPage}${search ? '&search=' + search : ''}${isFilterOn ? '&filter=' + currentUser.id : ''}`;
+    this.httpService.get<EventPaginationDto>(getUrl).toPromise().then((eventPaginationDto) => {
+      console.log(eventPaginationDto);
+      let currentEvents = this.events$.value;
+      if(currentPage == 1) {
+        currentEvents = eventPaginationDto.items;
+      } else {
+        currentEvents.push(...eventPaginationDto.items);
+      }
+      this.events$.next(currentEvents);
+      if(eventPaginationDto.noOfPages) {
+        this.noOfPages = eventPaginationDto.noOfPages;
+      }
+      localStorage.setItem(LocalStorageItems.Events, JSON.stringify(currentEvents));
+    }).catch((error) => {
+      console.log(error);
     })
   }
 
-  public getItems(): Observable<Message[]> {
-    return this.messages$.asObservable();
+  private fetchItemsOffline(pageSize: number, currentPage: number): void {
+    console.log('Offline fetch');
+    const messages: Event[] = JSON.parse(localStorage.getItem(LocalStorageItems.Events));
+    if(!messages) {
+      return;
+    }
+    const chunkOfMessages = messages.slice(currentPage * pageSize, (currentPage + 1) * pageSize)
+    const currentMessages = this.events$.value;
+    currentMessages.push(...chunkOfMessages);
+    this.events$.next(currentMessages);
   }
 
-  public getMessageById(id: number): Observable<Message> {
-    return this.messages$.asObservable().pipe(
+  public getItems(): Observable<Event[]> {
+    return this.events$.asObservable();
+  }
+
+  public getMessageById(id: number): Observable<Event> {
+    console.log('id', id);
+    return this.events$.asObservable().pipe(
       map((messages) => {
-        return messages.find(message => message.id === id);
+        return messages.find(message => message._id === id);
       })
     );
   }
 
-  public updateItem(message: Message): void {
-    const updateUrl = `${this.entityUrl}/${message.id}`;
-    this.httpService.put(updateUrl, message);
-  }
-
-  public createNewMessage(newMessage: MessageDto): void {
-    this.httpService.post(this.entityUrl, newMessage);
-  }
-
-  public ngOnDestroy(): void {
-    this.closeWebSocket();
-  }
-
-  private createWebsocket(): void {
-    console.log('created websocket')
-    this.closeWebSocket = newWebSocket(message => {
-      const { event, payload: { item }} = message;
-      console.log(`ws message, item ${event}`);
-      if (event === 'created') {
-        console.log('created', message);
-        this.newItemAdded(item);
-      } else if (event === 'updated') {
-        console.log('updated', message);
-        this.itemUpdated(item);
-      }
+  public updateItem(message: Event): void {
+    if(!this.isOnline) {
+      this.offlineTaskService.addUpdateOfflineTask(message);
+      return;
+    }
+    const updateUrl = `${this.entityUrl}/${message._id}`;
+    this.httpService.put(updateUrl, message).toPromise().then().catch(error => {
+      this.entityConflictsService.addUpdateConflict(message, error);
     });
   }
 
-  private newItemAdded(item: Message): void {
-    this.messages$.next([ ...this.messages$.value, item]);
+  public createNewEvent(newEvent: EventDto): void {
+    if(!this.isOnline) {
+      this.offlineTaskService.addCreateOfflineTask(newEvent);
+      return;
+    }
+    this.httpService.post(this.entityUrl, newEvent).subscribe((item) => {
+      console.log('item created', item);
+    })
   }
 
-  private itemUpdated(updatedItem: Message): void {
-    const newList = this.messages$.value.map((item) => item.id === updatedItem.id ? updatedItem : item);
-    this.messages$.next(newList);
+  public deleteEvent(eventId: number): void {
+    if(!this.isOnline) {
+      this.offlineTaskService.addDeleteOfflineTask(eventId);
+      return;
+    }
+    const deleteUrl = `${this.entityUrl}/${eventId}`;
+    this.httpService.delete(deleteUrl).subscribe(() => {
+      console.log('item deleted');
+    })
+  }
+
+  public logout(): void {
+    this.events$.next([]);
+    this.websocketService.closeWebSocket();
+  }
+
+  public ngOnDestroy(): void {
+    this.websocketService.closeWebSocket();
+    this.subscription.unsubscribe();
+  }
+
+  private subscribeToConnectivity(): void {
+    this.subscription = this.connectivityService.isOnline$.subscribe(isOnline => {
+      this.isOnline = isOnline;
+    })
   }
 }

@@ -1,0 +1,25 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button [text]="getBackButtonText()" defaultHref="/"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Event Details</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="editEvent()">Edit</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" *ngIf="event">
+  
+  <div class="image-container">
+    <img [src]="sanitizeImage()">
+  </div>
+  <div class="ion-padding">
+    <h1>{{ event.title }}</h1>
+    <p>
+      {{ event.description }}
+    </p>
+  </div>
+  <div id="map"></div>
+</ion-content>

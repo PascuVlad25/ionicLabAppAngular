@@ -1,7 +1,8 @@
 {
   "name": "ionicLabAppAngular",
   "integrations": {
-    "capacitor": {}
+    "capacitor": {},
+    "cordova": {}
   },
   "type": "angular"
 }
